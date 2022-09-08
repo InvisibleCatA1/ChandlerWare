@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"container/list"
+	"os"
+)
 
 var tokens []string
 
@@ -13,9 +16,12 @@ func main() {
 }
 
 func send_info() {
-	tokens = append(tokens, "hi")
-	fmt.Println(tokens)
+
 }
 
 func start() {
+	appdata, _ := os.UserHomeDir()
+	localappdata, _ := os.UserCacheDir()
+	locations := list.New()
+
 }
