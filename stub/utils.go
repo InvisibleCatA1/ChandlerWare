@@ -30,7 +30,6 @@ func getRequest(url string, isChecking bool, token string) (body string, err err
 	req, err := http.NewRequest("GET", url, nil)
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36 Edg/88.0.705.74")
 	req.Header.Set("Content-Type", "application/json")
-	// We are checking if the token is working
 	if isChecking {
 		req.Header.Set("Authorization", token)
 	}
